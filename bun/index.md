@@ -56,6 +56,15 @@ bun add -d prettier
 
 ※`--dev`や`-D`でも同様です。
 
+### パッケージのインポート
+
+Node.jsと同様に`import`文を書けます。
+
+```js
+import figlet from "figlet"
+import { z } from 'zod'
+```
+
 ### バージョン管理
 
 Node.jsと同様に、インストールしたnpmパッケージは`package.json`で管理されます。
