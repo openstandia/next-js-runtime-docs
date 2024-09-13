@@ -4,15 +4,116 @@
 
 ## セットアップ
 
-<!-- 開発を始めるのに必要な操作 -->
-
 ### インストール
 
-<!-- 開発端末へのインストール方法 -->
+開発端末へBunをインストールする方法はOSによって異なります。
+
+#### macOS / Linux
+```shell
+curl -fsSL https://bun.sh/install | bash
+```
+
+#### Windows（Powershell）
+```shell
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+※プロキシ環境下でインストールする場合、端末のプロキシ設定を行ってからインストールを実行してください。
+
+インストールするとコマンドラインでBunのCLIを利用できます。以下のコマンドでインストールされたことを確認できます。
+
+```shell
+bun --version
+```
+
+### Bunプロジェクトの作成
+
+**Bunプロジェクトを作成したいディレクトリ**で以下のコマンドを実行します。
+
+```shell
+bun init
+```
+
+下記のようなプロンプトが表示されるので、パッケージ名（`package name`）とエントリーポイント（`entry point`）を指定すると、必要なファイルがカレントディレクトリに生成されます。
+
+```
+bun init helps you get started with a minimal project and tries to
+guess sensible defaults. Press ^C anytime to quit.
+
+package name (quickstart):
+entry point (index.ts):
+
+Done! A package.json file was saved in the current directory.
+ + index.ts
+ + .gitignore
+ + tsconfig.json (for editor auto-complete)
+ + README.md
+
+To get started, run:
+  bun run index.ts
+```
+
+BunはNode.jsとの互換性を意識しているため、従来のNode.jsプロジェクトと同様に`package.json`や`tsconfig.json`が生成されます。
+
+<!-- TODO: 既存のNode.jsプロジェクトへの導入は別ドキュメントにする -->
 
 ### 設定ファイル
 
-<!-- CLIなどのための設定ファイルの種類と記法 -->
+Bunは`package.json`や`tsconfig.json`を参照するので、既存のNode.jsプロジェクトと同様の設定のみであればこれらのファイルで設定は完結します。
+一方、Bun固有の設定をファイルとして定義する場合は、`bunfig.toml`というファイルをプロジェクトルートに作成します。このファイルは任意であり、これがなくてもBunプロジェクトは動作します。
+
+`bunfig.toml`で設定できる項目の全量は[公式ドキュメント](https://bun.sh/docs/runtime/bunfig)を参照してください。
+ここでは、その中から抜粋して説明します。
+
+#### ランタイム
+
+ランタイム全般に関することはトップレベルに記載します。
+
+| 項目 | 説明 |
+| - | - |
+| `preload` | `bun run`コマンドでファイルやスクリプトを実行する前に実行したいファイルを指定します。 |
+| `loglevel` | ログレベルを指定します。`debug`・`warn`・`error`から選択します。 |
+
+
+```toml
+preload = ["./preload.ts"]
+loglevel = "debug"
+```
+
+#### テスト設定（`[test]`）
+
+| 項目 | 説明 |
+| - | - |
+| `test.preload` | テスト実行前に実行したいファイルを指定します（モックの設定など）。 |
+| `test.coverage` | カバレッジを取得するかどうかを指定します。デフォルト値は`false`です。 |
+| `test.coverageThreshold` | カバレッジ率のしきい値を設けます。しきい値を下回る場合、`bun test`は非ゼロ値で終了します。デフォルトは設定されていません。 |
+
+```toml
+[test]
+preload = ["./setup.ts"]
+coverage = true
+coverageThreshold = 0.9
+# 行・関数・命令単位でも指定できる
+# coverageThreshold = { line = 0.7, function = 0.8, statement = 0.9 }
+```
+
+#### パッケージマネージャ（`[install]`）
+
+| 項目 | 説明                                                                                                          |
+| - |-------------------------------------------------------------------------------------------------------------|
+| `install.production` | `bun install`時に、`package.json`の`devDependencies`に含まれているパッケージを対象外にするか指定します（`true`だと対象外にする）。デフォルト値は`false`です。 |
+| `install.frozenLockfile` | `bun install`時に、`bun.lockb`を更新せずに`bun.lockb`に基づいてインストールします。デフォルト値は`fasle`です。                                |
+| `install.registry` | パッケージのレジストリを指定します。デフォルト値は `https://registry.npmjs.org/` です。                                                 |
+| `install.lockfile.print` | ロックファイルを`bun.lockb`に加えてどのフォーマットで生成するか指定します。`yarn`のみサポートされています。                                              |
+
+```toml
+[install]
+production = false
+frozenLockfile = true
+
+[install.lockfile]
+print = "yarn"
+```
 
 ## TypeScript
 
