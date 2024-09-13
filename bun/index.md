@@ -333,13 +333,13 @@ preload = "./my-preload.ts"
 
 ### DOMテスト
 
-Bunのテストランナーを使ってDOMのテストを実行したい場合、Bun公式は[happy-dom](https://github.com/capricorn86/happy-dom)の利用を推奨しています。DOMのテストのためには`document`や`window`のようなブラウザAPIにアクセスする必要があり、テストランナーがそれにアクセスできるようにするために必要なパッケージをインストールします。
+Bunのテストランナーを使ってDOMのテストを実行したい場合、Bun公式は[happy-dom](https://github.com/capricorn86/happy-dom)の利用を推奨しています。DOMのテストのためには、テストランナーが`document`や`window`のようなブラウザAPIにアクセスする必要があるため、必要なパッケージをインストールします。
 
 ```shell
 bun add -d @happy-dom/global-registrator
 ```
 
-グローバルスコープでブラウザAPIを登録する関数（`GlobalRegistrator.register`）を呼び出す処理を定義し、これをプレロードするように設定します。
+グローバルスコープでブラウザAPIを登録する関数（`GlobalRegistrator.register`）を呼び出す処理をプレロードするように設定します。
 
 __`happydom.ts`__
 ```ts
@@ -385,6 +385,12 @@ coverage = true
 
 カバレッジのしきい値を設ける場合は`bunfig.toml`で`coverageThreshold`を指定します。
 
+__`bunfig.toml`__
+```toml
+[test]
+coverage = true
+coverageThreshold = 0.9
+```
 ## Bun Shell
 
 <!-- Bunでシェルスクリプトを書く機能 -->
