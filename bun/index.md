@@ -156,8 +156,241 @@ bun install --frozen-lockfile
 
 ## テスト
 
-<!-- Bun標準のテストランナー -->
+Bunには標準でテストランナーが備わっています。
+おおまかな記法は[Jest](https://jestjs.io/ja/)に則っているので、すでにJestやVitestを利用したことがある方は違和感なく記述できます。
 
+### テストケースの書き方
+
+`test`関数を使ってテストケースを定義します。複数のテストケースは`describe`関数でまとめることができます。
+
+アサーションは`expect`関数を使います。
+
+```ts
+import { describe, test, expect } from 'bun:test'
+import { add, sub } from './math.ts'
+
+describe('計算関数のテスト', () => {
+  test('足し算関数のテスト', () => {
+    expect(add(2, 3)).toBe(5); // PASS
+  })
+
+  test('引き算関数のテスト', () => {
+    expect(sub(5, 2)).toBe(1); // FAIL
+  })
+})
+```
+
+`expect`関数でアサーションできる内容（Matcher）の全量は[公式ドキュメント](https://bun.sh/docs/test/writing#matchers)を参照してください。基本的にはJestが備えているものをBun側で改めて実装する方針となっています。
+
+### テストの実行
+
+以下のコマンドでテストを実行します。
+
+```shell
+bun test
+```
+
+実行ディレクトリ配下から、以下のパターンにマッチするテストファイルが探査され実行されます。
+
+- `*.test.{js|jsx|ts|tsx}`
+- `*_test.{js|jsx|ts|tsx}`
+- `*.spec.{js|jsx|ts|tsx}`
+- `*_spec.{js|jsx|ts|tsx}`
+
+ファイル名でフィルタリングする場合は`-t`オプション（または`--test-name-pattern`）を使います。下記の例ではファイル名に`addition`が含まれているテストファイルが実行されます。
+
+```shell
+bun test --test-name-pattern addition
+```
+
+特定のテストファイルを指定したい場合は引数で指定します。
+
+```shell
+bun test ./test/specific-file.test.ts
+```
+
+タイムアウトやリラン（同じテストを複数回実行する）などはオプションで設定できます。詳細は[公式ドキュメント](https://bun.sh/docs/cli/test)を参照してください。
+
+### モック
+
+モック関数を作りたい場合は`mock`関数に関数式を渡します。
+
+```ts
+import { mock } from 'bun:test'
+
+const mockGetId = mock((base: string) => `${base}-mock`);
+```
+
+モック関数は呼び出し回数や呼び出されたときの引数などをアサーションできます。
+
+---
+
+実際のふるまいをモック化せずに、呼び出し回数などをアサーションしたい場合は`spyOn`を使用します（関数がオブジェクトのプロパティである必要があります）。
+
+__`math.ts`__
+```ts
+export const add = (x: number, y: number) => {
+    return x + y;
+}
+
+export const doubleAdd = (x: number, y: number) => {
+    return add(add(x, y), y)
+}
+```
+
+__`math.spec.ts`__
+```ts
+import { describe, test, expect, spyOn } from 'bun:test'
+import * as math from '../math';
+
+const spyMath = spyOn(math, 'add')
+
+describe('math', () => {
+    test('doubleAdd', () => {
+        expect(math.doubleAdd(2, 3)).toBe(8);     // PASS
+        expect(spyMath).toHaveBeenCalledTimes(2); // PASS
+    })
+}); 
+```
+
+---
+
+モジュール全体をモック化する場合は`mock.module`を使用します。
+
+__`random.ts`__
+```ts
+export const getRandom = () => Math.random();
+```
+
+__`math.ts`__
+```ts
+import { getRandom } from "./random";
+
+export const randomTimes = (x: number) => {
+    return x * getRandom();
+}
+```
+
+__`math.spec.ts`__
+```ts
+import { describe, test, expect, spyOn, mock } from 'bun:test'
+import { randomTimes } from '../math';
+
+mock.module("../random", () => {
+    return {
+        getRandom: () => 100,
+    }
+})
+
+describe('math', () => {
+    test('random', () => {
+        expect(randomTimes(1)).toBe(100);
+    })
+}); 
+
+```
+
+### ライフサイクルフック
+
+テストの前後に決まった処理を実行したい場合は、ライフサイクルフックを使用します。以下の4つが用意されています。
+
+| フック | 説明 |
+| - | - |
+| `beforeAll`	| 最初のテストの前に全体で1度だけ実行されます。 |
+| `beforeEach` | 各テストの前に都度実行されます。 |
+| `afterEach`	| 各テストの後に都度実行されます。 |
+| `afterAll` | 最後のテストの後に全体で1度だけ実行されます。 |
+
+ライフサイクルフックは後述のセットアップファイルや各テストファイル、`describe`内のそれぞれに記述できます。ライフサイクルフックのスコープは記述したブロックに限られます。
+
+### プレロード
+
+モックやライフサイクルフックの設定をテスト全体で共通化する場合、各テストファイルに書くのではなく、一つのファイルにまとめてテストコマンドの実行時に読み込ませることができます。
+
+モック化の設定などをファイルに記述し、`bun test`のオプションもしくは`bunfig.toml`で指定します。
+
+__`my-preload.ts`__
+```ts
+import { mock } from "bun:test"
+
+mock.module("./utils/random", () => {
+    return {
+        getRandom: () => 100,
+    }
+})
+```
+
+```shell
+bun test --preload my-preload.ts
+```
+
+※もしくは下記の内容を`bunfig.toml`に追記します。
+
+```toml
+[test]
+preload = "./my-preload.ts"
+```
+
+### DOMテスト
+
+Bunのテストランナーを使ってDOMのテストを実行したい場合、Bun公式は[happy-dom](https://github.com/capricorn86/happy-dom)の利用を推奨しています。DOMのテストのためには、テストランナーが`document`や`window`のようなブラウザAPIにアクセスする必要があるため、必要なパッケージをインストールします。
+
+```shell
+bun add -d @happy-dom/global-registrator
+```
+
+グローバルスコープでブラウザAPIを登録する関数（`GlobalRegistrator.register`）を呼び出す処理をプレロードするように設定します。
+
+__`happydom.ts`__
+```ts
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+
+GlobalRegistrator.register();
+```
+
+__`bunfig.toml`__
+```toml
+[test]
+preload = "./happydom.ts"
+```
+
+この設定でテストケース内でDOMにアクセスできるようになるので、DOMテストを記述します。
+先頭行に`/// <reference lib="dom" />`を追記することで、TypeScriptによるコンパイラエラーを防ぎます。
+
+```ts
+/// <reference lib="dom" />
+
+import {test, expect} from 'bun:test';
+
+test('dom test', () => {
+  document.body.innerHTML = `<button>My button</button>`;
+  const button = document.querySelector('button');
+  expect(button?.innerText).toEqual('My button');
+});
+```
+
+### カバレッジ
+
+カバレッジを計測する場合、`bun test`のオプションもしくは`bunfig.toml`で指定します。
+
+```shell
+bun test --coverage
+```
+
+__`bunfig.toml`__
+```toml
+[test]
+coverage = true
+```
+
+カバレッジのしきい値を設ける場合は`bunfig.toml`で`coverageThreshold`を指定します。
+
+__`bunfig.toml`__
+```toml
+[test]
+coverage = true
+coverageThreshold = 0.9
+```
 ## Bun Shell
 
 <!-- Bunでシェルスクリプトを書く機能 -->
