@@ -117,7 +117,54 @@ print = "yarn"
 
 ## TypeScript
 
-<!-- TypeScriptで書くために必要な設定 -->
+### `.ts`の実行
+BunはネイティブでTypeScriptをサポートしています。すなわち、`.ts`拡張子のファイルを追加のパッケージを必要とせず実行します。
+
+※実行環境のランタイムがBunであれば、開発～ビルドの過程でトランスパイルは不要です。一方で、開発ではBunを使うがアプリはNode.jsランタイムやブラウザ上で動かす場合は、トランスパイルが必要です。
+
+### `tsconfig.json`
+
+Bunは、トップレベルの`await`や`.ts`のimportといった、デフォルトのTypeScriptが許可しない機能をサポートしています。そのため、Bun公式が推奨する`compilerOptions`が存在します。
+
+このファイルは、[Bunプロジェクトの作成](#bunプロジェクトの作成)で書いたように、`bun init`コマンドを実行してプロジェクトを作成した場合、デフォルトで生成されます。
+
+```json
+{
+  "compilerOptions": {
+    // Enable latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true
+  }
+}
+```
+
+### Bun標準APIの型
+
+`Bun.serve`のような、Bunが提供する標準APIをTypeScriptで使用するためには、それらAPIの型情報をインストールする必要があります。以下のコマンドで型情報をインストールできます。
+
+```bash
+bun add -d @types/bun
+```
 
 ## CLI
 
