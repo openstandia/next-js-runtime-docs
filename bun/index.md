@@ -253,9 +253,44 @@ DB_PASSWORD=password
 
 | `.env.`ファイル | 説明 |
 | - | - |
-| `.env` | 
+| `.env` | 必ず読み込まれます（`--env-file`使用時を除く）。 |
+| `.env.development` | 開発モード時に読み込まれます。（`NODE_ENV=development`のとき） |
+| `.env.production` | プロダクションモード時に読み込まれます。（`NODE_ENV=production`のとき） |
+| `.env.local` | 必ず読み込まれます（`--env-file`使用時を除く）。通常、Gitでは管理されません。 |
+
+特定の`.env`ファイルを指定したい場合は、`--env-file`オプションで指定します。複数指定した場合は、後に指定したもので上書きされます。
+
+```bash
+bun --env-file=.env.abc --env-file=.env.def run build
+```
+
+`.env`ファイル内では環境変数の展開が可能です。下記の例では、`BAR`の値は`helloworld`になります。
+
+```bash
+FOO=world
+BAR=hello$FOO
+```
+
+`.env`ファイルで定義していない、もしくは定義したものの値を上書きしたい環境変数がある場合は、`bun`コマンド実行時に指定します。
+下記コマンドでは環境変数`FOO`に`hello world`がセットされます。
+
+```bash
+FOO=helloworld bun run dev
+```
 
 ### 取得
+
+ソースコード内で環境変数を取得するには、いくつか方法があります。下記は、`API_TOKEN`という環境変数を取得する例です。
+
+- `process.env.API_TOKEN`
+- `Bun.env.API_TOKEN`
+- `import.meta.env.API_TOKEN`
+
+Bunが取得できる環境変数の一覧は、下記のコマンドで出力できます。
+
+```bash
+bun --print process.env
+```
 
 ## ビルド
 
