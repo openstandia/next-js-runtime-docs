@@ -26,6 +26,27 @@ powershell -c "irm bun.sh/install.ps1 | iex"
 bun --version
 ```
 
+### ネットワーク設定
+
+開発環境が、ネットワーク疎通のために特別な設定が必要な環境の場合、Bunのためにあらかじめ設定しておく必要があります。
+
+#### プロキシ
+
+Bunはデフォルトで`HTTP_PROXY`や`HTTPS_PROXY`環境変数を読み込みます。下記のように設定してください。
+
+```
+HTTP_PROXY=http://<ユーザ名>:<パスワード>@<proxyサーバのアドレス>:<ポート>
+HTTPS_PROXY=http://<ユーザ名>:<パスワード>@<proxyサーバのアドレス>:<ポート>
+```
+
+#### 証明書
+
+特定の証明書を読み込ませる必要がある場合、`NODE_EXTRA_CA_CERTS`環境変数に設定します（下記はNetskopeを利用している端末での例です）。
+
+```
+NODE_EXTRA_CA_CERTS=/Library/Application Support/Netskope/STAgent/data/nscacert.pem
+```
+
 ### Bunプロジェクトの作成
 
 **Bunプロジェクトを作成したいディレクトリ**で以下のコマンドを実行します。
