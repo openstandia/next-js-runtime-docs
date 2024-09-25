@@ -44,7 +44,7 @@ MacOS や Linux では、次のコマンドでインストールできます。
 curl -fsSL https://deno.land/install.sh | sh
 ```
 
-Windows では、次のコマンドを使用します。
+Windows では、次のコマンドでインストールできます。
 
 ```bash
 irm https://deno.land/install.ps1 | iex
@@ -91,7 +91,7 @@ DENO_CERT=<証明書までのパス>
 DENO_TLS_CA_STORE=system
 ```
 
-Deno 実行時に証明書を指定して実行することも可能です。
+Deno コマンド実行時に証明書を指定して実行することも可能です。
 
 ```bash
 deno --cert <証明書までのパス> main.ts
@@ -99,7 +99,7 @@ deno --cert <証明書までのパス> main.ts
 
 ### プロジェクトの作成
 
-Deno では以下のコマンドで新しい初期プロジェクトを作成できます。
+Deno では以下のコマンドで新しいプロジェクトを作成できます。
 
 ```bash
 deno init my_project
@@ -119,8 +119,6 @@ my_project
 ```bash
 deno run main.ts
 ```
-
-アプリケーションファイルは TypeScript で作成されるため、JavaScript を使用したい場合はファイルの拡張子を`.js`に変更し、内容を JavaScript に適応させる必要があります。
 
 #### 設定ファイル
 
@@ -213,7 +211,7 @@ Node.js の`npm run script`に相当するスクリプト実行を簡略化す�
 }
 ```
 
-`npm run script`と同様に以下のコマンドを実行することで設定した`deno run --allow-read main.ts`を省略化した形で実行できます。
+上記の設定を記述しておくことで、`npm run script`と同様に、以下のコマンドで`deno run --allow-read main.ts`を省略化した形で実行できます。
 
 ```bash
 deno task start
@@ -221,7 +219,7 @@ deno task start
 
 ##### ロックファイルの設定
 
-Deno が依存関係の整合性を保証するために使用するロックファイルの設定を指定することができます。ロックファイルの場所やそもそもロックファイルを使用しないように設定することができます。
+Deno が依存関係の整合性を保証するために使用するロックファイルの設定を行うことができます。ロックファイルの場所を指定したり、使用を無効にすることも可能です。何も指定しない場合、デフォルトでロックファイルは使用され、パスは`./deno.lock`に設定されています
 
 ```json
 {
