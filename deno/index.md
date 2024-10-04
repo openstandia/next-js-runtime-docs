@@ -242,7 +242,7 @@ Deno は TypeScript をネイティブでサポートしています。そのた
 
 ### 型チェック
 
-TypeScript の主な利点のひとつは、コードを型安全にできることです。Deno では、コードを実行せずに`deno check`サブコマンドから型チェックを行うことができます。
+Deno では、コードを実行せずに`deno check`サブコマンドから型チェックを行うことができます。
 
 ```bash
 deno check module.ts
