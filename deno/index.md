@@ -238,7 +238,29 @@ Deno が依存関係の整合性を保証するために使用するロックフ
 
 ## TypeScript
 
-<!-- TypeScriptで書くために必要な設定 -->
+Deno は TypeScript をネイティブでサポートしています。そのため、Deno CLI さえインストールすれば、TypeScript を実行したりインポートしたりすることが可能です。Deno には TypeScript コンパイラが組み込まれており、追加の設定なしで TypeScript コードを JavaScript にコンパイルします。また、Deno は TypeScript コードの型チェックも行うことができ、tsc のような別の型チェックツールを使う必要はありません。
+
+### 型チェック
+
+TypeScript の主な利点のひとつは、コードを型安全にできることです。Deno では、コードを実行せずに`deno check`サブコマンドから型チェックを行うことができます。
+
+```bash
+deno check module.ts
+# リモートモジュールやnpmパッケージも型チェックする場合
+deno check --all module.ts
+# JSDocに書かれたコードスニペットも型チェックする場合
+deno check --doc module.ts
+# マークダウンファイル内のコードスニペットを型チェックする場合
+deno check --doc-only markdown.md
+```
+
+`deno run`コマンドを使用する際、Deno は型チェックをスキップしてコードを直接実行します。実行前にモジュールの型チェックを行うには、`deno run`に`--check`フラグを付けて使用します。
+
+```bash
+deno run --check module.ts
+# リモートモジュールやnpmパッケージも型チェックする場合
+deno run --check=all module.ts
+```
 
 ## CLI
 
