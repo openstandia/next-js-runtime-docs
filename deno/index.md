@@ -304,7 +304,65 @@ Node.js と同様に、`package.json`でバージョンが管理されます。�
 
 ## 環境変数
 
-<!-- 環境変数の読み込み方 -->
+Deno で環境変数を使用する方法はいくつかあります。
+
+### `Deno.env`の組み込みサポート
+
+Deno では、`Deno.env`を使用して環境変数の組み込みサポートを提供しています。
+`Deno.env`には、getter と setter のメソッドがあります。使用例は以下の通りです。
+
+```typescript
+Deno.env.set('FIREBASE_API_KEY', 'examplekey123');
+Deno.env.set('FIREBASE_AUTH_DOMAIN', 'firebasedomain.com');
+
+console.log(Deno.env.get('FIREBASE_API_KEY')); // examplekey123
+console.log(Deno.env.get('FIREBASE_AUTH_DOMAIN')); // firebasedomain.com
+console.log(Deno.env.has('FIREBASE_AUTH_DOMAIN')); // true
+```
+
+環境変数を扱う場合は実行時に`--allow-env`オプションが必要です。
+
+```bash
+deno run --allow-env main.ts
+```
+
+### `.env`ファイルのサポート
+
+Deno は`.env`ファイルをデフォルトでサポートしています。実行時に`--env`フラグを付けることで自動的に`.env`ファイルから環境変数を読み込みます。
+
+`.env`ファイルの中には、`key=value`の形で環境変数名とその値を設定します。また、環境変数の展開も可能です。
+
+```bash
+HOST=localhost
+PORT=3000
+URL=http://${HOST}:${PORT}
+```
+
+読み込んだ環境変数は`Deno.env.get`でソースコード内で使用できます。
+
+```typescript
+console.log(Deno.env.get('URL')); // http://localhost:3000
+```
+
+環境変数を扱う場合は実行時に`--allow-env`オプションが必要です。
+
+```bash
+deno run --allow-env --env main.ts
+```
+
+また、`dotenv/load`モジュールを使用することで`--env`を付けなくても`.env`で定義された環境変数を読み込むことができます。
+
+```typescript
+import 'jsr:@std/dotenv/load';
+
+console.log(Deno.env.get('URL')); // http://localhost:3000
+```
+
+`dotenv/load`を使用する場合は`--allow-read`オプションも追加で必要です。
+
+```bash
+deno run --allow-env --allow-read main.ts
+```
 
 ## ビルド
 
