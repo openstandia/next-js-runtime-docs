@@ -186,7 +186,263 @@ BunのCLIで使えるコマンドの一部を記載します。コマンドに�
 
 ## 標準ライブラリ・API
 
-<!-- Bunが提供する標準ライブラリやAPIの一覽 -->
+Bunはいくつかの機能をランタイム標準として提供しており、そのうちのいくつかを説明します。全量は公式ドキュメントを参照してください。
+
+### HTTP関係
+
+#### HTTPサーバ
+
+`Bun.serve`でHTTPサーバを起動できます。fetch APIやNode.jsの`http`モジュールと`https`モジュールを再実装しているため、それらの仕様に則った実装が可能です。下記の例では、fetch API標準の`Response`オブジェクトを返却します。
+
+```js
+Bun.serve({
+  fetch(req) {
+    return new Response("Bun!");
+  },
+});
+```
+
+`Bun.serve`の引数にはオブジェクトを渡します。リクエストを受け取ったときのハンドラは`fetch`プロパティに関数として定義します。`fetch`ハンドラは`async`や`await`をサポートします。
+
+```js
+import { sleep } from "bun";
+Bun.serve({
+  async fetch(req) {
+    const start = performance.now();
+    await sleep(10);
+    const end = performance.now();
+    return new Response(`Slept for ${end - start}ms`);
+  },
+});
+```
+
+返却する`Response`オブジェクトが静的な場合は`static`プロパティを使用できます。ルートごとに静的なレスポンスを定義することができます。
+
+```js
+Bun.serve({
+  static: {
+    // 例：ヘルスチェック用
+    "/api/health-check": new Response("All good!"),
+
+    // 例：301レスポンスを返却してリダイレクトを促す
+    "/old-link": Response.redirect("/new-link", 301),
+
+    // 例：静的な文字列を返す
+    "/": new Response("Hello World"),
+
+    // 例：静的なファイルを返す
+    "/index.html": new Response(await Bun.file("./index.html").bytes(), {
+      headers: {
+        "Content-Type": "text/html",
+      },
+    }),
+    "/favicon.ico": new Response(await Bun.file("./favicon.ico").bytes(), {
+      headers: {
+        "Content-Type": "image/x-icon",
+      },
+    }),
+
+    // 例：JSONを返す
+    "/api/version.json": Response.json({ version: "1.0.0" }),
+  },
+
+  // それ以外のルートに対するレスポンス
+  fetch(req) {
+    ...
+  },
+});
+```
+
+HTTPメソッドの種類は`Request`オブジェクトから取得できます。
+
+```js
+const server = Bun.serve({
+  port: process.env.SERVER_PORT,
+  async fetch(req) {
+    const method = req.method;
+    switch (method) {
+      case "GET":
+        ...
+      case "POST":
+        ...
+      default:
+        ...
+    }
+
+  }
+})
+```
+
+#### HTTPクライアント
+
+Bunはfetch APIをサポートしているので、外部サーバへのリクエストは`fetch`を用いることができます。
+
+```js
+const response = await fetch("http://example.com");
+
+console.log(response.status);
+
+const text = await response.text(); // 場合によってはresponse.json()やresponse.formData()などを使用
+```
+
+POSTメソッドを送りたい場合は、`method`プロパティに`"POST"`を指定した`Request`オブジェクトを`fetch`に渡します。
+
+```js
+const request = new Request("http://example.com", {
+  method: "POST",
+  body: "Hello, world!",
+});
+
+const response = await fetch(request);
+```
+
+その他、レスポンスボディの扱い方などは[MDNのドキュメント](https://developer.mozilla.org/ja/docs/Web/API/Fetch_API)を参照してください。
+
+#### WebSocket
+
+`Bun.serve`はWebSocketに対応しています。
+
+WebSocketによる通信を受け付けるためには、`fetch`ハンドラ内でプロトコルのアップグレードを受け入れる必要があります（メカニズムの詳細は[MDNドキュメント](https://developer.mozilla.org/ja/docs/Web/HTTP/Protocol_upgrade_mechanism)を参照してください）。
+
+※`fetch`の第二引数で`Server`オブジェクトを参照できます。このオブジェクトはサーバ側で使えるユーティリティを提供します。
+
+```js
+Bun.serve({
+  fetch(req, server) {
+    // WebSocketへのプロトコルのアップグレード
+    if (server.upgrade(req)) {
+      return; // アップグレード時は何もレスポンスを返さなくてよい
+    }
+    return new Response("Upgrade failed", { status: 500 });
+  },
+});
+```
+
+`websocket`プロパティにWebSocketのイベントハンドラを指定できます。
+
+```js
+Bun.serve({
+  fetch(req, server) {},
+  websocket: {
+    message(ws, message) {}, // メッセージを受け取ったとき
+    open(ws) {}, // WebSocket通信が確立されたとき
+    close(ws, code, message) {}, // WebSocket通信が閉じられたとき
+    drain(ws) {}, // バッファに空きができて追加のデータを受信できるようになったとき
+  },
+});
+```
+
+### バイナリやファイル関係
+
+#### バイナリデータ
+
+BunはJavaScript標準のバイナリに関する型やユーティリティを提供します。具体的には`TypedArray`、`Buffer`、`DataView`を提供します。
+これらの詳細は[Bunの公式ドキュメント](https://bun.sh/docs/api/binary-data)で解説されています。
+
+Node.jsのAPIである`Buffer`もBunで再実装されているので使用できます。配列的な使用感と`DataView`的な使用感の両方を兼ね備えています。
+※サーバサイドでのみ利用できるAPIであるため、ブラウザでは使用できません。
+
+その他にも、`Blob`オブジェクトや`File`オブジェクトのようなWeb標準のクラスをサポートしています。
+
+#### ストリーム
+
+ストリームは、バイナリデータの読み書きを一度に行わずに、都度都度行う方式です。Web標準のAPIとして`ReadableStream`と`WritableStream`が定義されており、Bunはどちらもサポートしています。
+
+加えて、BunはDirect Readable Streamという仕組みをサポートしています。従来の`ReadableStream`では、データのチャンクはメモリ上に一度エンキューされ、コンシューマ側がデキューするまではチャンクが残り続けます。それに対し、Direct Readable Streamではキューを使わずに直接送信先のストリームに送信されます。
+
+```js
+const stream = new ReadableStream({
+  type: "direct",
+  pull(controller) {
+    controller.write("hello");
+    controller.write("world");
+  },
+});
+```
+
+#### ファイル
+
+`Bun.file`を使うことでファイルへの参照（`BunFile`インスタンス）を作成できます。`BunFile`インスタンスはBlobインターフェースを実装しているので、`Blob`と同様のメソッドを利用してファイルを読み込めます。
+
+```js
+const foo = Bun.file("foo.txt");
+
+await foo.text(); // 文字列として取得
+await foo.stream(); // ReadableStreamとして取得
+await foo.arrayBuffer(); // ArrayBufferとして取得
+await foo.bytes(); // Uint8Arrayとして取得
+```
+
+標準入出力への参照も`BunFile`として提供されます。
+
+```js
+Bun.stdin; // readonly
+Bun.stdout;
+Bun.stderr;
+```
+
+ファイルの書き込みには`Bun.write`が使用できます。第一引数で書き込むファイルのパスを、第二引数で書き込む内容を指定します。
+
+```js
+const data = `あいうえお`;
+await Bun.write("output.txt", data);
+```
+
+引数には`BunFile`インスタンスを渡すことができるので、コピー元とコピー先のそれぞれの`BunFile`インスタンスを使うことでファイルのコピーが行えます。
+
+```js
+const input = Bun.file("input.txt");
+const output = Bun.file("output.txt"); // コピー先の参照（まだ存在していない）
+await Bun.write(output, input);
+```
+
+### ユーティリティ
+
+`Bun.sleep`で`Promise`を返すタイマーを起動できます。スレッドをブロックする場合は`Bun.sleepSync`を使用します。
+
+```js
+console.log("hello");
+await Bun.sleep(1000);
+console.log("hello one second later!");
+```
+
+オブジェクトの比較には`Bun.deepEquals`を使用します。ネストされていても判定が可能です。
+
+```js
+const foo = { a: 1, b: 2, c: { d: 3 } };
+
+// true
+Bun.deepEquals(foo, { a: 1, b: 2, c: { d: 3 } });
+
+// false
+Bun.deepEquals(foo, { a: 1, b: 2, c: { d: 4 } });
+```
+
+プロセス開始からの経過時間（ナノ秒）を`Bun.nanoseconds`で取得できます。
+
+```js
+Bun.nanoseconds();
+```
+
+ファイルパスやモジュールのパスは、`Bun.resolveSync`で解決できます。第一引数に対象のファイルやモジュールを、第二引数にルートとなるパスを指定します。
+カレントディレクトリをルートにする場合は`process.cwd()`を、実行ファイルの場所をルートにする場合は`import.meta.dir`を第二引数に設定します。
+
+```js
+Bun.resolveSync("./foo.ts", "/path/to/project");
+// => ファイル名なので、"/path/to/project/foo.ts"を返す
+
+Bun.resolveSync("zod", "/path/to/project");
+// => モジュールなので、"/path/to/project/node_modules/zod/index.ts"を返す
+
+Bun.resolveSync("./foo.ts", process.cwd());
+// => プロセスを起動したディレクトリからのパスを返す
+
+Bun.resolveSync("./foo.ts", import.meta.dir);
+// => このファイルが存在するディレクトリからのパスを返す
+
+```
+
+
 
 ## npmパッケージの利用
 
