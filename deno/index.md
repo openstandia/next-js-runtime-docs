@@ -249,6 +249,7 @@ Deno の CLI は、スクリプトの実行、依存関係の管理、さらに�
 | `deno run`     | TypeScript や JavaScript のプログラムを実行します。                                                                  |
 | `deno task`    | `deno.json`に定義したスクリプトを実行します。                                                                        |
 | `deno install` | `deno.json / package.json` に基づいて依存関係をインストールします。                                                  |
+| `deno add`     | `deno.json` に依存関係を追加します。                                                                                 |
 | `deno fmt`     | コードを標準的なコードスタイルに整えます。`deno.json`でフォーマットの設定をカスタマイズできます。                    |
 | `deno lint`    | TypeScript や JavaScript のコードの品質やスタイルをチェックします。`deno.json`でルールの設定をカスタマイズできます。 |
 | `deno test`    | `Deno.test`で宣言したテストを実行し、結果を出力します。                                                              |
