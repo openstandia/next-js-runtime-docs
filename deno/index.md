@@ -350,7 +350,7 @@ console.log(Deno.env.get('URL')); // http://localhost:3000
 deno run --allow-env --env main.ts
 ```
 
-また、`dotenv/load`モジュールを使用することで`--env`を付けなくても`.env`で定義された環境変数を読み込むことができます。
+その他にも、`dotenv/load`モジュールを使用することで`--env`を付けなくても`.env`で定義された環境変数を読み込むことができます。
 
 ```typescript
 import 'jsr:@std/dotenv/load';
