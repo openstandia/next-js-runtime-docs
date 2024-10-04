@@ -264,7 +264,28 @@ deno run --check=all module.ts
 
 ## CLI
 
-<!-- Denoで使えるコマンド一覽 -->
+Deno の CLI は、スクリプトの実行、依存関係の管理、さらにはコードをスタンドアロンの実行ファイルにコンパイルすることもできます。Deno の CLI で使用できるコマンドの一部を記載します。他のコマンドやオプションに関しては[公式ドキュメント](https://docs.deno.com/runtime/reference/cli/all_commands/)を参照してください。`fmt`、`lint`、`test`に関しては別の章で詳細を説明しています。
+
+| コマンド       | 内容                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `deno run`     | TypeScript や JavaScript のプログラムを実行します。                                                                  |
+| `deno task`    | `deno.json`に定義したスクリプトを実行します。                                                                        |
+| `deno install` | `deno.json / package.json` に基づいて依存関係をインストールします。                                                  |
+| `deno add`     | `deno.json` に依存関係を追加します。                                                                                 |
+| `deno fmt`     | コードを標準的なコードスタイルに整えます。`deno.json`でフォーマットの設定をカスタマイズできます。                    |
+| `deno lint`    | TypeScript や JavaScript のコードの品質やスタイルをチェックします。`deno.json`でルールの設定をカスタマイズできます。 |
+| `deno test`    | `Deno.test`で宣言したテストを実行し、結果を出力します。                                                              |
+| `deno compile` | TypeScript や JavaScript のプログラムを単一実行可能ファイルへコンパイルします。                                      |
+
+### watch フラグ
+
+`deno run`、`deno test`、`deno compile`、`deno fmt`に `--watch`フラグを付けることで、ビルトインのファイル監視機能を有効にできます。ファイル監視機能は、ソースファイルに変更があるとアプリケーションを自動でリロードします。特に開発中に便利で、アプリを手動で再起動せずに変更の効果をすぐに確認できます。
+
+```bash
+deno run --watch main.ts
+deno test --watch
+deno fmt --watch
+```
 
 ## パッケージマネージャ
 
