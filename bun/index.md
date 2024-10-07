@@ -1033,3 +1033,57 @@ await $`
 `;
 ```
 
+### 環境変数
+
+bashと同様に、コマンドより前に`key=value`の形で環境変数をセットできます。
+もしくは、`.env`または`$.env`でオブジェクト形式でセットできます。
+
+```js
+import { $ } from "bun";
+
+await $`FOO=foo bun -e 'console.log(process.env.FOO)'`; // foo\n
+
+// string変数の埋め込みも可能
+const foo = "bar123";
+await $`FOO=${foo + "456"} bun -e 'console.log(process.env.FOO)'`; // bar123456\n
+
+await $`echo $FOO`.env({ ...process.env, FOO: "bar" }); // bar
+
+// $.envでグローバルにセット
+$.env({ FOO: "bar" });
+
+await $`echo $FOO`; // bar
+```
+
+### ワーキングディレクトリの変更
+
+コマンド単位でワーキングディレクトリを指定する場合は`.cwd`でチェーンします。
+グローバルに指定する場合は`$.cwd`を使用します。
+
+```js
+import { $ } from "bun";
+
+await $`pwd`.cwd("/tmp"); // /tmp
+
+// グローバルに指定
+$.cwd("/app");
+await $`pwd`; // /app
+```
+
+### 出力形式
+
+コマンドの出力は様々な形式で取得できます。
+
+```js
+const result = await $`echo "Hello World!"`.text(); // string
+const result = await $`echo '{"foo": "bar"}'`.json(); // JSON
+
+// 行ごと
+for await (let line of $`echo "Hello World!"`.lines()) {
+  console.log(line); // Hello World!
+}
+
+// Blob
+const result = await $`echo "Hello World!"`.blob();
+
+```
