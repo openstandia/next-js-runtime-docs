@@ -911,4 +911,200 @@ coverageThreshold = 0.9
 ```
 ## Bun Shell
 
-<!-- Bunでシェルスクリプトを書く機能 -->
+Bun Shellは、Javascript / TypeScriptのソースコード上でシェルスクリプトを記述・実行できる機能です。
+bashライクなシェルスクリプトを記述でき、Bun Shellによって実装されているコマンドについてはクロスプラットフォームで動作します。
+
+### `$`によるコマンドの実行
+
+`bun`モジュールが提供する`$`に、コマンドをテンプレートリテラルとして渡すことでコマンドを実行できます。
+
+```js
+import { $ } from "bun";
+
+await $`echo "Hello World!"`; // 標準出力に"Hello World!"が表示される
+
+await $`echo "Hello World!"`.quiet(); // .quiet()で標準出力に表示されなくなる
+
+const welcome = await $`echo "Hello World!"`.text(); // .text()で出力内容をstringで取得できる
+
+console.log(welcome); // Hello World!\n
+
+const { stdout, stderr } = await $`echo "Hello World!"`.quiet(); // stdoutやstderrを分割代入するとBufferが取得できる
+
+console.log(stdout); // Buffer(6) [ 72, 101, 108, 108, 111, 32 ]
+console.log(stderr); // Buffer(0) []
+
+
+// 行ごとに複数のコマンドを実行できる
+await $`
+echo 1
+echo 2
+echo 3
+`
+/*
+  1
+  2
+  3
+*/
+```
+
+### 例外
+
+コマンドの実行結果が非ゼロ値の場合、`$`は例外（`ShellError`）を発生させます。
+
+```js
+import { $, ShellError } from "bun";
+
+try {
+    const result = await $`no-exist-command`.text();
+    console.log(result)
+} catch (err) {
+    console.log(`Failed with code ${err.exitCode}`); // Failed with code 1
+}
+
+// .nothrow()で例外の発生を抑止できる
+const { exitCode } = await $`no-exist-command`.nothrow();
+console.log(exitCode)
+
+// $.nothrow()でグローバルに抑止できる
+$.nothrow();
+
+// $.throws(boolean)でもグローバルに制御できる（trueで例外を発生させる）
+$.throws(true);
+```
+
+### リダイレクト
+
+bashと同様に、`>`や`<`を使って標準入出力に対してリダイレクトできます。
+
+標準出力は以下のオブジェクトに`>`を使ってリダイレクトできます。
+
+- `Buffer`
+- `Uint8Array`
+- `Uint16Array`
+- `Uint32Array`
+- `Int8Array`
+- `Int16Array`
+- `Int32Array`
+- `Float32Array`
+- `Float64Array`
+- `ArrayBuffer`
+- `SharedArrayBuffer`
+
+ファイルへの書き込みは以下のオブジェクトにリダイレクトできます。
+
+- `Bun.file(path)`
+- `Bun.file(fd)`
+
+以下のオブジェクトは標準入力に`<`を使ってリダイレクトできます。
+
+- `Buffer`
+- `Uint8Array`
+- `Uint16Array`
+- `Uint32Array`
+- `Int8Array`
+- `Int16Array`
+- `Int32Array`
+- `Float32Array`
+- `Float64Array`
+- `ArrayBuffer`
+- `SharedArrayBuffer`
+- `Bun.file(path)`
+- `Bun.file(fd)`
+- `Response` （レスポンスボディ）
+
+リダイレクトの使用例は[Redirection](https://bun.sh/docs/runtime/shell#redirection)を参照してください。
+
+### パイプ
+
+bashと同様に、`|`を使ってあるコマンドの出力を別のコマンドの入力につなげられます。
+
+```js
+import { $ } from "bun";
+
+const result1 = await $`echo "Hello World!" | wc -w`.text();
+
+console.log(result1); // 2\n
+
+// JavaScriptのオブジェクトもパイプの対象にできる
+
+const response = new Response("hello i am a response body");
+
+const result2 = await $`cat < ${response} | wc -w`.text();
+
+console.log(result2); // 6\n
+
+```
+
+### コマンド置換
+
+コマンドの中で`$(<別のコマンド>)`とすることで、別のコマンドの実行結果で置換できます。
+
+```js
+import { $ } from "bun";
+
+// 現在時刻を出力
+await $`echo current time: $(date)`; // current time: 2024年 10月 4日 金曜日 21時55分28秒 JST
+
+// コマンドの実行結果を変数に代入して利用できる
+await $`
+  REV=$(git rev-parse HEAD)
+  docker built -t myapp:$REV
+  echo Done building docker image "myapp:$REV"
+`;
+```
+
+### 環境変数
+
+bashと同様に、コマンドより前に`key=value`の形で環境変数をセットできます。
+もしくは、`.env`または`$.env`でオブジェクト形式でセットできます。
+
+```js
+import { $ } from "bun";
+
+await $`FOO=foo bun -e 'console.log(process.env.FOO)'`; // foo\n
+
+// string変数の埋め込みも可能
+const foo = "bar123";
+await $`FOO=${foo + "456"} bun -e 'console.log(process.env.FOO)'`; // bar123456\n
+
+await $`echo $FOO`.env({ ...process.env, FOO: "bar" }); // bar
+
+// $.envでグローバルにセット
+$.env({ FOO: "bar" });
+
+await $`echo $FOO`; // bar
+```
+
+### ワーキングディレクトリの変更
+
+コマンド単位でワーキングディレクトリを指定する場合は`.cwd`でチェーンします。
+グローバルに指定する場合は`$.cwd`を使用します。
+
+```js
+import { $ } from "bun";
+
+await $`pwd`.cwd("/tmp"); // /tmp
+
+// グローバルに指定
+$.cwd("/app");
+await $`pwd`; // /app
+```
+
+### 出力形式
+
+コマンドの出力は様々な形式で取得できます。
+
+```js
+const result = await $`echo "Hello World!"`.text(); // string
+const result = await $`echo '{"foo": "bar"}'`.json(); // JSON
+
+// 行ごと
+for await (let line of $`echo "Hello World!"`.lines()) {
+  console.log(line); // Hello World!
+}
+
+// Blob
+const result = await $`echo "Hello World!"`.blob();
+
+```
