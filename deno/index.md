@@ -289,7 +289,102 @@ deno fmt --watch
 
 ## パッケージマネージャ
 
-<!-- パッケージのインストール方法やバージョン管理方法 -->
+DenoはNode.jsのnpmのようなパッケージマネージャを使用せず、外部からモジュールをインポートする仕組みを採用しています。
+
+### モジュールシステム
+
+DenoではデフォルトのモジュールシステムとしてJavaScriptモジュールの公式標準であるECMAScriptモジュールを使用しています。これにより、モジュール間の依存関係が明確かつ効率的に管理されます。
+
+Denoでは、モジュールはシステムにキャッシュされるため、一度ダウンロードしたモジュールは再度ダウンロードする必要がありません。キャッシュは自動で管理され、モジュールのインポートを効率化します。
+
+#### モジュールのインポート方法
+
+Denoでは、さまざまな方法でモジュールをインポートできます。
+
+- **JSR**: 最新のJavaScriptレジストリである[JSR](https://jsr.io/)からモジュールをインポート。
+- **npm**: npmパッケージをインポート（Denoはネイティブにサポート）。
+- **HTTP/HTTPS URL**: URLから直接モジュールをインポート。
+- **ローカルファイル**: ローカルのファイルを指定してインポート。
+
+```typescript
+import { camelCase } from "jsr:@luca/cases@1.0.0";
+import { say } from "npm:cowsay@1.6.0";
+import { pascalCase } from "https://deno.land/x/case/mod.ts";
+import { add } from "./calc.ts";
+```
+
+DenoではJSRからのインポートを基本的に推奨しています。Denoの標準ライブラリやよく使用されるモジュールもJSRに含まれています。
+
+npmパッケージに関する詳細は [npm パッケージの利用](#npm-パッケージの利用) を参照してください。
+
+HTTP/HTTPS URLからのインポートではJavaScriptモジュールへのURLアクセスを提供する以下のJavaScript CDNをサポートしています。
+
+- [deno.land/x](https://deno.land/x)
+- [esm.sh](https://esm.sh/)
+- [unpkg.com](https://unpkg.com/https://unpkg.com/)
+
+#### モジュールの一元管理
+
+複数のファイルでモジュールをインポートする場合、モジュール名を完全なバージョン指定子で入力するのは面倒になります。そこで、Denoではモジュールのバージョンを一元管理するために[import-maps](https://github.com/WICG/import-maps)を使用することを推奨しています。import-mapsはdeno.jsonファイルのimportsフィールドを使用します。
+
+```json:deno.json
+{
+  "imports": {
+    "@luca/cases": "jsr:@luca/cases@^1.0.0",
+    "cowsay": "npm:cowsay@^1.6.0",
+    "cases": "https://deno.land/x/case/mod.ts"
+  }
+}
+```
+
+リマップされた指定子によって、コードにはすっきりとした形でインポート定義を行うことができます。
+
+```typescript
+import { camelCase } from "@luca/cases";
+import { say } from "cowsay";
+import { pascalCase } from "cases";
+```
+
+#### `deno add`を使用した依存関係の追加
+
+`deno add`サブコマンドを使えば、インストールしたいパッケージの最新バージョンをdeno.jsonのimportsセクションに自動的に追加できます。
+
+```bash
+# deno.jsonへ最新バージョンを追加します
+$ deno add jsr:@luca/cases
+Add @luca/cases - jsr:@luca/cases@1.0.0
+```
+
+バージョンを指定することもできます。
+
+```bash
+# deno.jsonへ指定したバージョンを追加します
+$ deno add jsr:@luca/cases@1.0.0
+Add @luca/cases - jsr:@luca/cases@1.0.0
+```
+
+deno.jsonへは以下のように追加されます。
+
+```json:deno.json
+{
+  "imports": {
+    "@luca/cases": "jsr:@luca/cases@^1.0.0"
+  }
+}
+```
+
+`deno remove`サブコマンドを使用して依存関係を削除することもできます。
+
+```bash
+$ deno remove @luca/cases
+Remove @luca/cases
+```
+
+```json:deno.json
+{
+  "imports": {}
+}
+```
 
 ## 標準ライブラリ・API
 
@@ -420,11 +515,6 @@ deno run --allow-env --allow-read main.ts
 ## プラグイン
 
 <!-- Denoプラグインの書き方 -->
-
-## モジュールシステム
-
-<!-- Denoでのモジュールに関する考え方 -->
-<!-- パッケージやライブラリと重なる部分もあるかもなので必要に応じて削除 -->
 
 ## テスト
 
