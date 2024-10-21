@@ -386,7 +386,117 @@ Remove @luca/cases
 
 ## 標準ライブラリ・API
 
-<!-- Denoが提供する標準ライブラリやAPIの一覽 -->
+### 標準ライブラリ
+
+Denoで使用できる標準ライブラリはJSRでホストされており、[https://jsr.io/@std](https://jsr.io/@std) で概要や使用例を確認できます。ここではいくつかを紹介します。
+
+#### @srd/assert
+
+アサーション関数のモジュールです。主にテストやバリデーションに使用され、コードの正当性を確認するために利用します。Node.jsの`assert`モジュールに似た機能を提供します。
+
+```typescript
+import { assert } from "@std/assert";
+
+assert("I am truthy"); // エラーは発生しない
+assert(false); // `AssertionError`が発生
+```
+
+#### @std/path
+
+OS固有のファイル・パスを扱うためのモジュールです。クロスプラットフォームでのファイルパスの操作をサポートします。Node.js の`path`モジュールに似た機能を提供します。
+
+Windowsの場合
+
+```typescript
+import { fromFileUrl } from "@std/path/windows/from-file-url";
+import { assertEquals } from "@std/assert";
+
+assertEquals(fromFileUrl("file:///home/foo"), "\\home\\foo");
+```
+
+#### @std/encoding
+
+hex、base64、varintのような一般的なフォーマットのエンコードとデコードのためのモジュールです。
+
+```typescript
+import { encodeBase64, decodeBase64 } from "@std/encoding";
+import { assertEquals } from "@std/assert";
+
+const foobar = new TextEncoder().encode("foobar");
+assertEquals(encodeBase64(foobar), "Zm9vYmFy");
+assertEquals(decodeBase64("Zm9vYmFy"), foobar);
+```
+
+### Deno API
+
+Denoではファイルからの読み取り、TCPソケットのオープン、HTTPの提供、サブプロセスの実行など様々なAPIを提供しています。そのうちのいくつかを紹介します。詳しくは公式ドキュメントの[API一覧](https://docs.deno.com/api/deno/)を参照してください。
+
+#### File System
+
+Denoには、ファイルやディレクトリを操作するための[さまざまな関数](https://docs.deno.com/api/deno/file-system)が用意されています。ファイルの読み込みだけでも[複数の方法](https://docs.deno.com/examples/reading-files/)が提供されているため、必要に応じて使い分けることが可能です。
+
+`Deno.readTextFile`は指定したパスのテキストファイルを非同期で読み込み、その内容を string として返します。
+
+```typescript
+const text = await Deno.readTextFile("hello.txt");
+```
+
+`Deno.writeTextFile`は指定したパスにテキストを非同期で書き込みます。もしファイルが存在しない場合は新しく作成し、存在する場合は上書きします。書き込むテキストは string で指定します。
+
+```typescript
+await Deno.writeTextFile("hello.txt", "Hello World");
+```
+
+#### Network
+
+`Deno.connect`は指定したホストとポートにTCPまたはUDPで接続を確立し、ソケット（通信のインターフェース）を返します。デフォルトでは`127.0.0.1`のローカルホストがホストネームに指定され、TCPプロトコルが通信プロトコルとして指定されています。
+
+```typescript
+const conn1 = await Deno.connect({ port: 80 });
+const conn2 = await Deno.connect({ hostname: "192.0.2.1", port: 80 });
+const conn3 = await Deno.connect({ hostname: "[2001:db8::1]", port: 80 });
+const conn4 = await Deno.connect({ hostname: "golang.org", port: 80, transport: "tcp" });
+```
+
+`Deno.listen`は指定したホストとポートでTCPまたはUDP接続を待ち受け、クライアントが接続するとソケットを返します。これにより、サーバーがクライアントからのデータを受信したり、データを送信したりすることができます。
+
+```typescript
+const listener1 = Deno.listen({ port: 80 })
+const listener2 = Deno.listen({ hostname: "192.0.2.1", port: 80 })
+const listener3 = Deno.listen({ hostname: "[2001:db8::1]", port: 80 });
+const listener4 = Deno.listen({ hostname: "golang.org", port: 80, transport: "tcp" });
+```
+
+#### Errors
+
+Denoには、さまざまな条件に応じて発生する[20のエラークラス](https://docs.deno.com/api/deno/errors)が用意されています。
+
+`Deno.errors.NotFound`はエラークラスの一つで、指定したファイルやリソースが見つからなかった場合に発生します。
+
+```typescript
+try {
+  const file = await Deno.open("./some/file.txt");
+} catch (error) {
+  if (error instanceof Deno.errors.NotFound) {
+    console.error("ファイルが見つかりませんでした");
+  } else {
+    // それ以外の場合は再スロー
+    throw error;
+  }
+}
+```
+
+#### HTTP Server
+
+`Deno.serve`は指定したポートでHTTPサーバを開始します。ポートに入ってきたリクエストごとにハンドラ関数をレスポンスとして返します。
+
+```typescript
+Deno.serve((_req) => {
+  return new Response("Hello, World!");
+});
+```
+
+上の例ではポートやホストネームを指定していないため、デフォルトのポート`8000`とホスト名`127.0.0.1`が使用されます。
 
 ## npm パッケージの利用
 
