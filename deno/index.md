@@ -127,7 +127,7 @@ Deno には標準的な設定ファイルが存在しません。Deno は設定�
 deno.json には以下の内容を指定できます。
 
 - `tsconfig.json`の設定
-- `import-map`の設定
+- `import-maps`の設定
 - Deno のサブコマンド関連の設定
 - `deno task`コマンドの設定
 - ロックファイルの設定
@@ -146,9 +146,9 @@ deno.json には以下の内容を指定できます。
 }
 ```
 
-##### `import-map`の設定
+##### `import-maps`の設定
 
-`import-map`を設定することで Deno で使用したいモジュールを一元管理することができます。Deno での一元管理については [モジュールの一元管理](#モジュールの一元管理) を参照してください。
+`import-maps`を設定することで Deno で使用したいモジュールを一元管理することができます。Deno での一元管理については [モジュールの一元管理](#モジュールの一元管理) を参照してください。
 
 ```json
 {
@@ -293,11 +293,11 @@ DenoはNode.jsのnpmのようなパッケージマネージャを使用せず、
 
 DenoではデフォルトのモジュールシステムとしてJavaScriptモジュールの公式標準であるECMAScriptモジュールを使用しています。これにより、モジュール間の依存関係が明確かつ効率的に管理されます。
 
-モジュールはシステムにキャッシュされるため、一度ダウンロードしたモジュールは再度ダウンロードする必要がありません。キャッシュは自動で管理され、モジュールのインポートを効率化します。
+モジュールは実行端末のローカルストレージにキャッシュされるため、一度ダウンロードしたモジュールは再度ダウンロードする必要がありません。キャッシュは自動で管理され、モジュールのインポートを効率化します。
 
 #### モジュールのインポート方法
 
-Denoでは、さまざまな方法でモジュールをインポートできます。
+Denoでは、さまざまなソースからモジュールをインポートできます。以下に主要なソースを記載しています。
 
 - **JSR**: 最新のJavaScriptレジストリである[JSR](https://jsr.io/)からモジュールをインポート。
 - **npm**: npmパッケージをインポート。
@@ -319,11 +319,11 @@ HTTP/HTTPS URLからのインポートではJavaScriptモジュールへのURL�
 
 - [deno.land/x](https://deno.land/x)
 - [esm.sh](https://esm.sh/)
-- [unpkg.com](https://unpkg.com/https://unpkg.com/)
+- [unpkg.com](https://unpkg.com/)
 
 #### モジュールの一元管理
 
-複数のファイルでモジュールをインポートする場合、モジュール名を完全なバージョン指定子で入力するのは面倒になります。そこで、Denoではモジュールのバージョンを一元管理するために[import-maps](https://github.com/WICG/import-maps)を使用することを推奨しています。import-mapsはdeno.jsonファイルのimportsフィールドを使用します。
+複数のファイルでモジュールをインポートする場合、モジュール名を完全なバージョン指定子で入力するのは面倒になります。そこで、Denoではモジュールのバージョンを一元管理するために[`import-maps`](https://github.com/WICG/import-maps)を使用することを推奨しています。`import-maps`は`deno.json`ファイルの`imports`フィールドを使用します。
 
 ```json:deno.json
 {
@@ -345,7 +345,7 @@ import { pascalCase } from "cases";
 
 #### `deno add`を使用した依存関係の追加
 
-`deno add`サブコマンドを使えば、インストールしたいパッケージの最新バージョンをdeno.jsonのimportsセクションに自動的に追加できます。
+`deno add`サブコマンドを使えば、インストールしたいパッケージの最新バージョンを`deno.json`の`imports`セクションに自動的に追加できます。
 
 ```bash
 # deno.jsonへ最新バージョンを追加します
@@ -361,7 +361,7 @@ $ deno add jsr:@luca/cases@1.0.0
 Add @luca/cases - jsr:@luca/cases@1.0.0
 ```
 
-deno.jsonへは以下のように追加されます。
+`deno.json`へは以下のように追加されます。
 
 ```json:deno.json
 {
@@ -434,7 +434,7 @@ console.log(cowsay.say({ text: 'Hello' }));
 
 #### `package.json`を使用したパッケージのバージョン管理
 
-Node.js と同様に、`package.json`でバージョンが管理されます。そのため、`import_map.json`や`deps.ts`を使用せずにパッケージの一元管理ができます。また、`deno.lock`ファイルを使用することで、依存関係の整合性を保つことができます。
+Node.js と同様に、`package.json`でバージョンが管理されます。そのため、`import_map.json`を使用せずにパッケージの一元管理ができます。また、`deno.lock`ファイルを使用することで、依存関係の整合性を保つことができます。
 
 ## 環境変数
 
