@@ -435,13 +435,13 @@ Denoではファイルからの読み取り、TCPソケットのオープン、H
 
 Denoには、ファイルやディレクトリを操作するための[さまざまな関数](https://docs.deno.com/api/deno/file-system)が用意されています。ファイルの読み込みだけでも[複数の方法](https://docs.deno.com/examples/reading-files/)が提供されているため、必要に応じて使い分けることが可能です。
 
-`Deno.readTextFile`は指定したパスのテキストファイルを非同期で読み込み、その内容を string として返します。
+`Deno.readTextFile`は指定したパスのテキストファイルを非同期で読み込み、その内容を`string`として返します。
 
 ```typescript
 const text = await Deno.readTextFile("hello.txt");
 ```
 
-`Deno.writeTextFile`は指定したパスにテキストを非同期で書き込みます。もしファイルが存在しない場合は新しく作成し、存在する場合は上書きします。書き込むテキストは string で指定します。
+`Deno.writeTextFile`は指定したパスにテキストを非同期で書き込みます。もしファイルが存在しない場合は新しく作成し、存在する場合は上書きします。書き込むテキストは`string`で指定します。
 
 ```typescript
 await Deno.writeTextFile("hello.txt", "Hello World");
@@ -488,7 +488,7 @@ try {
 
 #### HTTP Server
 
-`Deno.serve`は指定したポートでHTTPサーバを開始します。ポートに入ってきたリクエストごとにハンドラ関数をレスポンスとして返します。
+`Deno.serve`は指定したポートでHTTPサーバを開始します。リクエストに応じたレスポンスを返すことができるハンドラ関数を定義できます。
 
 ```typescript
 Deno.serve((_req) => {
