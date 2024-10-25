@@ -16,7 +16,7 @@ Deno ではデフォルトでファイルシステムやネットワーク、環
 
 ##### モジュールシステム
 
-Deno では ES モジュール（ECMAScript Modules）をデフォルトでサポートしており、モジュールは import 構文でファイルの URL から直接インポートします。これにより、npm のようなパッケージマネージャを必要としません。また、Deno では公式が提供している標準モジュールだけでなくサードパーティモジュールや npm パッケージを使用することが可能です。
+Deno では ES モジュール（ECMAScript Modules）をデフォルトでサポートしており、モジュールは import 構文でファイルの URL から直接インポートします。これにより、npm のようなパッケージマネージャを必要としません。また、Deno では公式が提供している標準ライブラリだけでなくサードパーティモジュールや npm パッケージを使用することが可能です。
 
 ##### TypeScript のサポート
 
@@ -127,7 +127,7 @@ Deno には標準的な設定ファイルが存在しません。Deno は設定�
 deno.json には以下の内容を指定できます。
 
 - `tsconfig.json`の設定
-- `import-map`の設定
+- `import-maps`の設定
 - Deno のサブコマンド関連の設定
 - `deno task`コマンドの設定
 - ロックファイルの設定
@@ -146,11 +146,9 @@ deno.json には以下の内容を指定できます。
 }
 ```
 
-##### `import-map`の設定
+##### `import-maps`の設定
 
-`import-map`を設定することで Deno で使用したいモジュールを一元管理することができます。Deno での一元管理については # モジュールの一元管理 を参照してください。
-
-<!-- #TODO:モジュールの一元管理を記述したらアンカーリンクを設定予定 -->
+`import-maps`を設定することで Deno で使用したいモジュールを一元管理することができます。Deno での一元管理については [モジュールの一元管理](#モジュールの一元管理) を参照してください。
 
 ```json
 {
@@ -289,15 +287,220 @@ deno fmt --watch
 
 ## パッケージマネージャ
 
-<!-- パッケージのインストール方法やバージョン管理方法 -->
+DenoはNode.jsのnpmのようなパッケージマネージャを使用せず、外部からモジュールをインポートする仕組みを採用しています。
+
+### モジュールシステム
+
+DenoではデフォルトのモジュールシステムとしてJavaScriptモジュールの公式標準であるECMAScriptモジュールを使用しています。これにより、モジュール間の依存関係が明確かつ効率的に管理されます。
+
+モジュールは実行端末のローカルストレージにキャッシュされるため、一度ダウンロードしたモジュールは再度ダウンロードする必要がありません。キャッシュは自動で管理され、モジュールのインポートを効率化します。
+
+#### モジュールのインポート方法
+
+Denoでは、さまざまなソースからモジュールをインポートできます。以下に主要なソースを記載しています。
+
+- **JSR**: 最新のJavaScriptレジストリである[JSR](https://jsr.io/)からモジュールをインポート。
+- **npm**: npmパッケージをインポート。
+- **HTTP/HTTPS URL**: URLから直接モジュールをインポート。
+- **ローカルファイル**: ローカルのファイルを指定してインポート。
+
+```typescript
+import { camelCase } from "jsr:@luca/cases@1.0.0";
+import { say } from "npm:cowsay@1.6.0";
+import { pascalCase } from "https://deno.land/x/case/mod.ts";
+import { add } from "./calc.ts";
+```
+
+DenoではJSRからのインポートを推奨しています。Denoの標準ライブラリやよく使用されるモジュールもJSRに含まれています。
+
+また、Denoではnpmパッケージをネイティブでサポートしています。npmパッケージに関する詳細は [npm パッケージの利用](#npm-パッケージの利用) を参照してください。
+
+HTTP/HTTPS URLからのインポートではJavaScriptモジュールへのURLアクセスを提供する以下のJavaScript CDNをサポートしています。
+
+- [deno.land/x](https://deno.land/x)
+- [esm.sh](https://esm.sh/)
+- [unpkg.com](https://unpkg.com/)
+
+#### モジュールの一元管理
+
+複数のファイルでモジュールをインポートする場合、モジュール名を完全なバージョン指定子で入力するのは面倒になります。そこで、Denoではモジュールのバージョンを一元管理するために[`import-maps`](https://github.com/WICG/import-maps)を使用することを推奨しています。`import-maps`は`deno.json`ファイルの`imports`フィールドを使用します。
+
+```json:deno.json
+{
+  "imports": {
+    "@luca/cases": "jsr:@luca/cases@^1.0.0",
+    "cowsay": "npm:cowsay@^1.6.0",
+    "cases": "https://deno.land/x/case/mod.ts"
+  }
+}
+```
+
+リマップされた指定子によって、コードにはすっきりとした形でインポート定義を行うことができます。
+
+```typescript
+import { camelCase } from "@luca/cases";
+import { say } from "cowsay";
+import { pascalCase } from "cases";
+```
+
+#### `deno add`を使用した依存関係の追加
+
+`deno add`サブコマンドを使えば、インストールしたいパッケージの最新バージョンを`deno.json`の`imports`セクションに自動的に追加できます。
+
+```bash
+# deno.jsonへ最新バージョンを追加します
+$ deno add jsr:@luca/cases
+Add @luca/cases - jsr:@luca/cases@1.0.0
+```
+
+バージョンを指定することもできます。
+
+```bash
+# deno.jsonへ指定したバージョンを追加します
+$ deno add jsr:@luca/cases@1.0.0
+Add @luca/cases - jsr:@luca/cases@1.0.0
+```
+
+`deno.json`へは以下のように追加されます。
+
+```json:deno.json
+{
+  "imports": {
+    "@luca/cases": "jsr:@luca/cases@^1.0.0"
+  }
+}
+```
+
+`deno remove`サブコマンドを使用して依存関係を削除することもできます。
+
+```bash
+$ deno remove @luca/cases
+Remove @luca/cases
+```
+
+```json:deno.json
+{
+  "imports": {}
+}
+```
 
 ## 標準ライブラリ・API
 
-<!-- Denoが提供する標準ライブラリやAPIの一覽 -->
+### 標準ライブラリ
+
+Denoで使用できる標準ライブラリはJSRでホストされており、[https://jsr.io/@std](https://jsr.io/@std) で概要や使用例を確認できます。ここではいくつかを紹介します。
+
+#### @srd/assert
+
+アサーション関数のモジュールです。主にテストやバリデーションに使用され、コードの正当性を確認するために利用します。Node.jsの`assert`モジュールに似た機能を提供します。
+
+```typescript
+import { assert } from "@std/assert";
+
+assert("I am truthy"); // エラーは発生しない
+assert(false); // `AssertionError`が発生
+```
+
+#### @std/path
+
+OS固有のファイル・パスを扱うためのモジュールです。クロスプラットフォームでのファイルパスの操作をサポートします。Node.js の`path`モジュールに似た機能を提供します。
+
+Windowsの場合
+
+```typescript
+import { fromFileUrl } from "@std/path/windows/from-file-url";
+import { assertEquals } from "@std/assert";
+
+assertEquals(fromFileUrl("file:///home/foo"), "\\home\\foo");
+```
+
+#### @std/encoding
+
+hex、base64、varintのような一般的なフォーマットのエンコードとデコードのためのモジュールです。
+
+```typescript
+import { encodeBase64, decodeBase64 } from "@std/encoding";
+import { assertEquals } from "@std/assert";
+
+const foobar = new TextEncoder().encode("foobar");
+assertEquals(encodeBase64(foobar), "Zm9vYmFy");
+assertEquals(decodeBase64("Zm9vYmFy"), foobar);
+```
+
+### Deno API
+
+Denoではファイルからの読み取り、TCPソケットのオープン、HTTPの提供、サブプロセスの実行など様々なAPIを提供しています。そのうちのいくつかを紹介します。詳しくは公式ドキュメントの[API一覧](https://docs.deno.com/api/deno/)を参照してください。
+
+#### File System
+
+Denoには、ファイルやディレクトリを操作するための[さまざまな関数](https://docs.deno.com/api/deno/file-system)が用意されています。ファイルの読み込みだけでも[複数の方法](https://docs.deno.com/examples/reading-files/)が提供されているため、必要に応じて使い分けることが可能です。
+
+`Deno.readTextFile`は指定したパスのテキストファイルを非同期で読み込み、その内容を`string`として返します。
+
+```typescript
+const text = await Deno.readTextFile("hello.txt");
+```
+
+`Deno.writeTextFile`は指定したパスにテキストを非同期で書き込みます。もしファイルが存在しない場合は新しく作成し、存在する場合は上書きします。書き込むテキストは`string`で指定します。
+
+```typescript
+await Deno.writeTextFile("hello.txt", "Hello World");
+```
+
+#### Network
+
+`Deno.connect`は指定したホストとポートにTCPまたはUDPで接続を確立し、ソケット（通信のインターフェース）を返します。デフォルトでは`127.0.0.1`のローカルホストがホストネームに指定され、TCPプロトコルが通信プロトコルとして指定されています。
+
+```typescript
+const conn1 = await Deno.connect({ port: 80 });
+const conn2 = await Deno.connect({ hostname: "192.0.2.1", port: 80 });
+const conn3 = await Deno.connect({ hostname: "[2001:db8::1]", port: 80 });
+const conn4 = await Deno.connect({ hostname: "golang.org", port: 80, transport: "tcp" });
+```
+
+`Deno.listen`は指定したホストとポートでTCPまたはUDP接続を待ち受け、クライアントが接続するとソケットを返します。これにより、サーバーがクライアントからのデータを受信したり、データを送信したりすることができます。
+
+```typescript
+const listener1 = Deno.listen({ port: 80 })
+const listener2 = Deno.listen({ hostname: "192.0.2.1", port: 80 })
+const listener3 = Deno.listen({ hostname: "[2001:db8::1]", port: 80 });
+const listener4 = Deno.listen({ hostname: "golang.org", port: 80, transport: "tcp" });
+```
+
+#### Errors
+
+Denoには、さまざまな条件に応じて発生する[20のエラークラス](https://docs.deno.com/api/deno/errors)が用意されています。
+
+`Deno.errors.NotFound`はエラークラスの一つで、指定したファイルやリソースが見つからなかった場合に発生します。
+
+```typescript
+try {
+  const file = await Deno.open("./some/file.txt");
+} catch (error) {
+  if (error instanceof Deno.errors.NotFound) {
+    console.error("ファイルが見つかりませんでした");
+  } else {
+    // それ以外の場合は再スロー
+    throw error;
+  }
+}
+```
+
+#### HTTP Server
+
+`Deno.serve`は指定したポートでHTTPサーバを開始します。リクエストに応じたレスポンスを返すことができるハンドラ関数を定義できます。
+
+```typescript
+Deno.serve((_req) => {
+  return new Response("Hello, World!");
+});
+```
+
+上の例ではポートやホストネームを指定していないため、デフォルトのポート`8000`とホスト名`127.0.0.1`が使用されます。
 
 ## npm パッケージの利用
 
-Deno では、基本的には標準モジュールやサードパーティーモジュールを使用しますが、npm パッケージを利用することもできます。主に以下の２つの方法で npm パッケージの使用がサポートされています。
+Deno では、基本的には標準ライブラリやサードパーティーモジュールを使用しますが、npm パッケージを利用することもできます。主に以下の２つの方法で npm パッケージの使用がサポートされています。
 
 ### URL 形式での利用
 
@@ -316,9 +519,7 @@ console.log(cowsay.say({ text: 'Hello' }));
 
 #### パッケージのバージョン管理
 
-`import`文の中でバージョンを指定して管理します。モジュールと同様に`import_map.json`や`deps.ts`を使用した一元管理も可能です。詳しくは #モジュールのバージョン管理 を参照してください。
-
-<!-- #モジュールのバージョン管理を記述したらアンカーリンクを設定予定 -->
+`import`文の中でバージョンを指定して管理します。モジュールと同様に`import_map.json`を使用した一元管理も可能です。詳しくは [モジュールの一元管理](#モジュールの一元管理) を参照してください。
 
 ### `package.json`を使用した利用
 
@@ -343,7 +544,7 @@ console.log(cowsay.say({ text: 'Hello' }));
 
 #### `package.json`を使用したパッケージのバージョン管理
 
-Node.js と同様に、`package.json`でバージョンが管理されます。そのため、`import_map.json`や`deps.ts`を使用せずにパッケージの一元管理ができます。また、`deno.lock`ファイルを使用することで、依存関係の整合性を保つことができます。
+Node.js と同様に、`package.json`でバージョンが管理されます。そのため、`import_map.json`を使用せずにパッケージの一元管理ができます。また、`deno.lock`ファイルを使用することで、依存関係の整合性を保つことができます。
 
 ## 環境変数
 
@@ -420,11 +621,6 @@ deno run --allow-env --allow-read main.ts
 ## プラグイン
 
 <!-- Denoプラグインの書き方 -->
-
-## モジュールシステム
-
-<!-- Denoでのモジュールに関する考え方 -->
-<!-- パッケージやライブラリと重なる部分もあるかもなので必要に応じて削除 -->
 
 ## テスト
 
