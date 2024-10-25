@@ -201,6 +201,33 @@ BunのCLIで使えるコマンドの一部を記載します。コマンドに�
 | `bun add` | パッケージを追加します。 |
 | `bun test` | テストを実行します。 |
 
+### Node.js前提のCLIを動かす場合
+
+一部のフレームワークが提供するCLI（例：Viteプロジェクトの`vite`コマンド）は、ランタイムとしてNode.jsを前提としているものがほとんどです。
+そのCLIを使用する`scripts`をそのまま`bun run`で実行するとBunではなくNode.jsが起動します。
+Bunを使用して実行したい場合は、`--bun`オプションを付与します。
+
+```bash
+bun --bun run dev // Bunを使用してnpm run dev実行
+```
+
+`package.json`の`scripts`を、`bunx --bun`を使うように修正することもできます。
+
+```json:packages.json
+{
+  "scripts": {
+    "dev": "bunx --bun vite",
+    "build": "tsc -b && bunx --bun vite build"
+  }
+}
+```
+
+この場合、実行自体は`bun run`のみで大丈夫です。
+
+```bash
+bun run dev
+```
+
 ## パッケージマネージャ
 
 Bunのパッケージマネージャは、Node.jsの公式パッケージマネージャであるnpmと同じように使用できます。
