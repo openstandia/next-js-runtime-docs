@@ -624,7 +624,87 @@ deno run --allow-env --allow-read main.ts
 
 ## テスト
 
-<!-- Deno標準のテストランナー -->
+Denoでは`deno test`で動作する標準の組み込みテストランナーを提供しています。
+また、Jest、Mocha、AVAなどJSエコシステムの他のテストランナーも使用できます。
+
+### テストの書き方
+
+`Deno.test()`関数を使用してテストを定義します。
+また、Deno はテストステップをサポートしており、`.step()`でテストを管理可能な小さな部分に分割することで、テストコードの可読性やデバッグ効率を向上させることができます。
+
+```typescript
+import { assertEquals } from "jsr:@std/assert";
+
+Deno.test("足し算のテスト", () => {
+  const x = 1 + 2;
+  assertEquals(x, 3);
+});
+
+Deno.test("DBテスト", async (t) => {
+  using db = await openDatabase();
+  await t.step("insert user", async () => {
+    // ロジックの挿入
+  });
+  await t.step("insert book", async () => {
+    // ロジックの挿入
+  });
+});
+
+Deno.test({
+  name: "ファイル読み込みテスト",
+  permissions: { read: true },  // テストに読取りを許可するための権限を付与
+  fn: () => {
+    const data = Deno.readTextFileSync("./somefile.txt");
+    assertEquals(data, "expected content");
+  },
+});
+```
+
+もし[Jest](https://jestjs.io/ja/)ライクな`expect`スタイルのアサーションを好むのであれば、Deno標準ライブラリは`assertEquals`の代わりに使える`expect`関数を提供しています。
+
+```typescript
+import { expect } from "jsr:@std/expect";
+import { add } from "./add.js";
+
+Deno.test("足し算関数（add）のテスト", () => {
+  const result = add(2, 3);
+  expect(result).toBe(5);
+});
+```
+
+### テストの実行
+
+`deno test`サブコマンドでテストを実行します。
+ファイル名やディレクトリ名を指定せずにコマンドを実行すると、カレントディレクトリにあるファイル名が`{*_,*.,}test.{ts, tsx, mts, js, mjs, jsx}`にマッチするすべてのテストを再帰的に実行します。
+また、コマンド実行時のオプションに`--filter`を付けることで特定のテストのみを実行します。
+
+```bash
+# カレントディレクトリとすべてのサブディレクトリ内のテストを実行する
+deno test
+
+# utilディレクトリ内のすべてのテストを実行する
+deno test util/
+
+# my_test.tsだけを実行する
+deno test my_test.ts
+
+# テストモジュールを並列で実行する
+deno test --parallel
+
+# `Deno.args`で参照できる追加の引数をテストファイルに渡す
+deno test my_test.ts -- -e --foo --bar
+
+# ファイルシステムからの読取りを許可するための権限を付与
+deno test --allow-read my_test.ts
+
+# テストディレクトリ内のテスト名に `my` を含むテストをすべて実行する
+deno test --filter "my" tests/
+```
+
+### モックやFake Time
+
+Denoでは、モックやFake Timerなどテストを書くのに役に立つ一連の関数を標準ライブラリで提供しています。
+これらに関してはJSRの[@std/testingドキュメント](https://jsr.io/@std/testing)を参照してください。
 
 ## セキュリティ
 
