@@ -157,7 +157,7 @@ bun run dev
 
 `bun --bun run build`でビルドを実行します。開発サーバの起動と同様、`--bun`オプションを付与します。
 
-ブラウザ向けのビルドでViteを使用しているため、ビルド成果物は`npm run build`でも`bun --run run build`でも同じになります。
+ブラウザ向けのビルドでViteを使用しているため、ビルド成果物は`npm run build`でも`bun --bun run build`でも同じになります。
 
 ## サンプル：バックエンド（Next.js）プロジェクト
 
