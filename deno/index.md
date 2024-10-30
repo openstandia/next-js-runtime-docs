@@ -628,8 +628,20 @@ deno run --allow-env --allow-read main.ts
 
 ## セキュリティ
 
-<!-- セキュリティに関するDenoの独自機能 -->
+Deno はデフォルトでセキュアであるという特徴を持ちます。特に有効にしない限り、Deno で実行されるプログラムは、ファイルシステムへのアクセス、ネットワーク接続、環境アクセスなどの機密性の高い API にはアクセスできません。これらのリソースへのアクセスは、コマンドラインオプションまたはランタイムパーミッションプロンプトで明示的に許可する必要があります。
 
 ### スクリプト実行の許可設定
 
-<!-- Denoの実行時に必要な許可設定の使い方 -->
+アクセスを許可するコマンドラインオプションは以下の表のとおりです。
+
+| **オプション**        | **説明**                                                                                               | **例**                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--allow-net`、`-N`   | ネットワークアクセス（HTTP、WebSocket など）を許可します。                                             | `deno run --allow-net script.ts`<br>`deno run --allow-net=github.com,jsr.io script.ts`<br>`deno run --allow-net=example.com:80 script.ts` |
+| `--allow-read`、`-R`  | ファイルの読み取りを許可します。                                                                       | `deno run --allow-read script.ts`<br>`deno run --allow-read=foo.txt,bar.txt script.ts`                                                    |
+| `--allow-write`、`-W` | ファイルの書き込みを許可します。                                                                       | `deno run --allow-write script.ts`<br>`deno run --allow-write=foo.txt,bar.txt script.ts`                                                  |
+| `--allow-env`、`-E`   | 環境変数へのアクセスを許可します。                                                                     | `deno run --allow-env script.ts`<br>`deno run --allow-env=HOME,FOO script.ts`                                                             |
+| `--allow-run`         | サブプロセスの実行を許可します。                                                                       | `deno run --allow-run script.ts`<br>`deno run --allow-run="curl,whoami" script.ts`                                                        |
+| `--allow-ffi`         | FFI（Foreign Function Interface）による Rust、C、C++などの他の言語で書かれたコードの実行を許可します。 | `deno run --allow-ffi script.ts`<br>`deno run --allow-ffi=./libfoo.so script.ts`                                                          |
+| `--allow-import`      | Web からのコードのインポートを許可します。。                                                           | `deno run --allow-import=example.com main.ts`                                                                                             |
+| `--allow-all`、`-A`   | 全ての権限を許可します。                                                                               | `deno run --allow-all script.ts`                                                                                                          |
+| `--allow-sys`、`-S`   | システム情報（`hostname`や`osRelease`など）へのアクセスを許可します。                                  | `deno run --allow-sys script.ts`<br>`deno run --allow-sys="systemMemoryInfo,osRelease" script.ts`                                         |
