@@ -1,6 +1,26 @@
 ## 概要
 
-<!-- Bunの特徴のサマリ -->
+Bun（バン）は、高速なプログラミング言語のZigによって作成されたJavaScriptおよびTypeScriptのランタイムです。Node.jsの使用感を意識しつつ、速度向上やユーティリティの追加を図っています。
+
+### Bun の特徴
+
+Bun は Node.js と比較すると以下のような特徴を持っています。
+
+#### オールインワン開発環境
+
+単なるランタイムとしての機能だけでなく、Node.jsではnpmと別れていたパッケージ管理や、別ツールに頼っていたビルドツールやテストツールを内包しており、手軽かつ高速にこれらの機能を利用できます。
+
+#### モジュールシステム
+
+`package.json`で依存関係を管理するNode.js従来の方式を踏襲しているものの、その動作自体は非常に高速であり、ロックファイルをバイナリデータで管理するなどの特徴があります。
+
+#### TypeScript のサポート
+
+TypeScript をネイティブでサポートしており、特別な設定なしで TypeScript ファイルを直接実行できます。
+
+#### Bun Shell
+
+Bun Shellという機能を使えば、JavaScriptの構文でシェルライクなスクリプトを記述できます。
 
 ## セットアップ
 
@@ -687,17 +707,220 @@ bun --print process.env
 
 ## ビルド
 
-<!-- 各環境向けのビルド方法 -->
+Bunはネイティブのバンドラを備えています。2024/11現在、バンドラ機能はベータ版となっています。
 
-### SPAなどのブラウザ向け
+ビルドはCLIとBun API（JavaScript）のどちらかで実行できます。
 
-### Node.js向け
+```bash
+bun build ./index.tsx --outdir ./build
+```
 
-### Bun向け
+```js
+await Bun.build({
+  entrypoints: ['./index.tsx'],
+  outdir: './build',
+});
+```
+
+Bunのバンドラはあくまでバンドルのみを行い、`tsc`のような、型チェックや型定義ファイルの生成は行いません。
+
+上記のサンプルコードでは、ビルド成果物はコマンドを実行したカレントディレクトリの`.build`ディレクトリ配下に生成されます。
+
+### ビルド設定
+
+ビルド設定についていくつか説明します。全量と詳細な説明は[公式ドキュメント](https://bun.sh/docs/bundler#api)を参照してください。
+
+#### `target`
+
+```js
+await Bun.build({
+  entrypoints: ['./index.ts'],
+  outdir: './out',
+  target: 'browser', // デフォルト
+})
+```
+
+どの環境向けにバンドルするかを指定します。
+
+| 設定値 | デフォルト | 説明 |
+| - | - | - |
+| `browser` | ◯ | ブラウザ向けのバンドルを行います。ブラウザ環境で使えない一部の関数（`fs.readFile`など）は使えません。 |
+| `bun` | | Bunランタイム向けのバンドルを行います。BunはネイティブでTypeScriptをサポートしており、サーバサイドで実行するため必ずしもバンドルは必要ありません（コードを直接実行できるため）。エントリポイントになるファイルの先頭に`#!/usr/bin/env bun`というシェバンがあると、`target`のデフォルト値は`bun`に設定されます。 |
+| `node` | | Node.jsランタイム向けのバンドルを行います。現時点では実装されていませんが、将来的には、`bun:*`のようにBun APIを使うよう書いていても、自動でNode.js向けにpolyfillされるようになる予定です。 |
+
+#### `format`
+
+```js
+await Bun.build({
+  entrypoints: ['./index.tsx'],
+  outdir: './out',
+  format: "esm",
+})
+```
+
+生成されたファイルのフォーマットを指定します。
+
+| 設定値 | デフォルト | 説明 |
+| - | - | - |
+| `esm` | ◯ | ES Moduleで出力します。 |
+| `cjs` | | CommonJSで出力します。こちらを選択すると、`target`のデフォルト値は`node`に変更されます。 |
+
+#### `splitting`
+
+```js
+await Bun.build({
+  entrypoints: ['./index.tsx'],
+  outdir: './out',
+  splitting: false, // default
+})
+```
+
+複数のエントリポイントで共有されているコードをチャンクとして切り出すかどうかを指定します。
+
+| 設定値 | デフォルト | 説明 |
+| - | - | - |
+| `falase` | ◯ | チャンクを生成しません。 |
+| `true` | | チャンクを生成します。複数のエントリポイントからimportされているファイルを別ファイルとして生成します。 |
+
+```js
+await Bun.build({
+  entrypoints: ['./entry-a.ts', './entry-b.ts'],
+  outdir: './out',
+  splitting: true,
+})
+```
+
+```text
+.
+├── entry-a.tsx
+├── entry-b.tsx
+├── shared.tsx // このファイルがentry-aとentry-bから参照されている
+└── out
+    ├── entry-a.js
+    ├── entry-b.js
+    └── chunk-2fce6291bf86559d.js // shared.tsx相当
+```
 
 ## プラグイン
 
-<!-- Bunプラグインの書き方 -->
+BunはプラグインAPIを提供しており、ランタイムやバンドラで利用できるプラグインを作成することができます。
+プラグインは、主にソースコードやファイルの読み込み時をインターセプトし、独自のローダーとしてふるまいます。例えば、デフォルトでは読み込めない`.scss`や`.yaml`などのファイルや、`.js`への変換が必要な`.svelte`（Svelteコンポーネント）といったフレームワーク固有のファイルを読み込むことができます。
+
+### プラグインの記法
+
+プラグインは以下の手順で有効化します。
+
+1. `BunPlugin`型のオブジェクトを定義
+2. `bun`が提供する`plugin`関数を使ってオブジェクトを登録
+3. 2.のソースコードを`bunfig.toml`の`preload`に追加
+
+#### `BunPlugin`型のオブジェクトを定義 & `bun`が提供する`plugin`関数を使ってオブジェクトを登録
+
+```js
+import { plugin, type BunPlugin } from "bun";
+
+// `BunPlugin`型のオブジェクトを定義 
+const myPlugin: BunPlugin = {
+  name: "Custom loader",
+  setup(build) {
+    // プラグインを実装
+  },
+};
+
+//  `bun`が提供する`plugin`関数を使ってオブジェクトを登録
+plugin(myPlugin);
+```
+
+`BunPlugin`は、`name`と`setup`の２つのプロパティを持つオブジェクトで、`setup`には初期処理の関数を定義します。
+
+`bun`からimportした`plugin`に`BunPlugin`オブジェクトを渡すことで、プラグインを登録します。
+
+#### `bunfig.toml`の`preload`に追加
+
+`bunfig.toml`の`preload`で、プラグインを登録するソースコードのパスを指定します。こうすることで、Bunのランタイムやバンドルが実行される前にプラグインを登録できます。
+
+```toml
+preload = ["./myPlugin.ts"]
+```
+
+### ローダー
+
+プラグインの主な役割はローダーです。ローダーは、ソースコードでimportできるファイルを拡張したり、前処理で変形したりする役割を持ちます。
+
+#### 例：YAMLファイルのローダー
+
+[js-yaml](https://github.com/nodeca/js-yaml)を使って、`.yaml`ファイルをオブジェクトとしてimportできるようにするローダーです。
+ファイルの読み込み時に処理を挟み込みたい場合は`build.onLoad`というライフサイクルフックを使用します。
+
+戻り値はオブジェクトで、`loader`プロパティを含む必要があります。`loader`には、戻り値をどう解釈すればよいかが指示されています。今回は、`js-yaml`で読み込んだYAMLをオブジェクトとして扱いたいため、`object`を設定します。`object`を設定したとき、オブジェクト自体は`exports`プロパティで返します。
+
+```ts
+import { plugin } from "bun";
+
+await plugin({
+  name: "YAML",
+  async setup(build) {
+    const { load } = await import("js-yaml");
+
+    // YAMLファイルを読み込んだとき（`filter`でフィルタ）
+    build.onLoad({ filter: /\.(yaml|yml)$/ }, async (args) => {
+
+      // YAMLファイルをパース
+      const text = await Bun.file(args.path).text();
+      const exports = load(text) as Record<string, any>;
+
+      // モジュールとして返却
+      return {
+        exports,
+        loader: "object",
+      };
+    });
+  },
+});
+```
+
+#### 例：Svelteコンポーネントのローダー
+
+Svelteのソースコード（`.svelte`）を扱うには`.js`ファイルにコンパイルする必要があります。`svelte/compiler`としてコンパイラが公開されているので、そのコンパイラを通じてコンパイルしたものを返却します。`.js`ファイル（を含む、Bunの組み込みローダーが対応しているもの）としてローダーから返却する場合は`contents`というプロパティに`js`ファイルの文字列を設定します。
+今回は、コンパイル後のソースコードを一つの文字列として`contents`に格納しています。
+
+```ts
+import { plugin } from "bun";
+
+await plugin({
+  name: "svelte loader",
+  async setup(build) {
+    const { compile } = await import("svelte/compiler");
+
+    // Svelteコンポーネントを読み込んだとき
+    build.onLoad({ filter: /\.svelte$/ }, async ({ path }) => {
+
+      // ファイルの読み込みとコンパイル
+      const file = await Bun.file(path).text();
+      const contents = compile(file, {
+        filename: path,
+        generate: "ssr",
+      }).js.code;
+
+      // コンパイラ済みのコードを`js`として返却
+      return {
+        contents,
+        loader: "js",
+      };
+    });
+  },
+});
+```
+
+このローダーを使うと、以下のようにimportできます。
+
+```js
+import "./sveltePlugin.ts";
+import MySvelteComponent from "./component.svelte";
+
+console.log(MySvelteComponent.render());
+```
+
 
 ## テスト
 
