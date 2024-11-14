@@ -96,7 +96,6 @@ To get started, run:
 
 BunはNode.jsとの互換性を意識しているため、従来のNode.jsプロジェクトと同様に`package.json`や`tsconfig.json`が生成されます。
 
-<!-- TODO: 既存のNode.jsプロジェクトへの導入は別ドキュメントにする -->
 
 ### 設定ファイル
 
