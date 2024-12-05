@@ -262,6 +262,27 @@ denoは`package.json`内の`scripts`の内容を参照するため、追加の�
 `deno task build`でビルドを実行します。
 開発サーバの起動スクリプトと同様に、ビルドスクリプトにNode.js環境専用の機能が含まれている場合、必要に応じてビルドコマンドを修正してください。
 
+### `script`プロパティ
+
+`package.json`の`script`プロパティに記述された定義は、修正なしで`deno task <script>`で実行できますが、`npm`指定子を付けることでも実行可能です。
+
+例えば、Next.jsのプロジェクトであれば、以下のように`npm`指定子を使った定義に修正できます。
+
+```json:package.json
+"scripts": {
+    "dev": "deno run npm:next dev",
+    "build": "deno run npm:next build",
+    "start": "deno run npm:next start",
+    "lint": "deno run npm:next lint"
+  },
+```
+
+`npm`指定子を使った方法では、`deno run`に対応したオプションを追加することができます。例えば、以下のように細かくセキュリティ設定を制限したり、環境変数定義ファイルを明示的に指定することができます。
+
+```json:package.json
+    "build": "deno run -E -env-file=.env.local npm:next build",
+```
+
 ## Tips
 
 ### シェルスクリプト
