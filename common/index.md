@@ -105,7 +105,7 @@ BunのインターフェースはNode.jsの使用感に近しくなっていま�
 
 ### ビルド時間の比較
 
-計測対象としていくつかのソースコードを選択し、Node.js・Deno・Bunを使ったビルド時間を比較します。
+いくつかのソースコードを用意し、Node.js・Deno・Bunを使ったビルド時間を比較します。
 
 #### 検証条件
 
@@ -121,11 +121,11 @@ BunのインターフェースはNode.jsの使用感に近しくなっていま�
 - ZA, ZSのビルドコマンドは`nuxt build  --dotenv .env.production`である
 - RAのビルドコマンドは`next build`である
 - ビルドコマンドはnpm scriptsで`"build"`に設定している
-  - Node.jsで実行する場合は`npm run build`とする
-  - Bunで実行する場合は、Bun上で動作させるために`--bun`オプションをつけ、`bun run --bun build`とする
+  - Node.jsで実行する場合は、`npm run build`とする
+  - Bunで実行する場合は、`--bun`オプションをつけ、`bun run --bun build`とする
   - Denoで実行する場合、以下の二通りで行う
     - `npm:`なし：そのまま`deno task build`とする
-    - `npm:`あり：`deno run -A npm:nuxt build ...`のように`npm:`をつけた上で`deno task build`とする
+    - `npm:`あり：`deno run -A npm:nuxt build ...`のように`npm:`をつけたscriptに修正した上で`deno task build`とする
 
 #### 結果
 
@@ -138,4 +138,4 @@ BunのインターフェースはNode.jsの使用感に近しくなっていま�
 | Deno（npm:あり） | `17.34` | `32.50` | `1m38.278` |
 | Node | `20.30` | `41.85` | `1m14.050` |
 
-DenoおよびBunのどちらを使っても、おおむねNode.jsよりもビルド速度が速くなることが確認できました。ただし、Denoを使ってビルドする場合、プロジェクトによっては`npm:`指定子をつけることで却ってビルド時間が長くなるケースがあることがわかりました。
+DenoおよびBunのどちらを使っても、おおむねNode.jsよりもビルド速度が速くなることが確認できます。ただし、Denoを使ってビルドする場合、プロジェクトによっては`npm:`指定子をつけることで、かえってビルド時間が長くなるケースがあります。
