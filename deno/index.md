@@ -610,17 +610,38 @@ deno run --allow-env --allow-read main.ts
 
 ## ビルド
 
-<!-- 各環境向けのビルド方法 -->
+Denoのネイティブバンドラである、`deno bundle`はDeno 2.0より非推奨となりました。
+そのため、現在は以下のような代替ツールの使用が推奨されています。
 
-### SPA などのブラウザ向け
+- [`deno_emit`](https://github.com/denoland/deno_emit)
+- [`esbuild`](https://esbuild.github.io/)
+- [`rollup`](https://rollupjs.org/)
 
-### Node.js 向け
+### `deno_emit`
 
-### Deno 向け
+`deno_emit`はDenoが公式で管理する標準ライブラリの一つであり、JavaScriptとTypeScriptをトランスパイル、バンドルするためのAPIを提供します。
+Deno環境に組み込まれた形で動作するため、Deno特有のURLインポートにも対応しています。
+
+```typescript
+import { bundle } from "jsr:@deno/emit";
+const result = await bundle(
+  new URL("https://deno.land/std@0.140.0/examples/chat/server.ts"),
+);
+
+const { code } = result;
+console.log(code);
+
+Deno.writeTextFile("./build/result.js", code);
+```
+
+`deno_emit`のAPIはバンドル結果をオブジェクトとして返すため、必要に応じて`Deno.writeTextFile`などを使ってファイル出力を行います。
+上記のサンプルコードではバンドル結果を`./build/result.js`に保存しています。
 
 ## プラグイン
 
-<!-- Denoプラグインの書き方 -->
+Denoは現在のところ、ランタイムやバンドラで利用できるプラグインを作成するためのプラグインAPIを提供していません。
+しかし、Denoの柔軟な設計を活かして、いくつかのツールを組み合わせることでプラグイン的な機能を実現できます。
+例えば、`esbuild`自体にはカスタムプラグインを作成するAPIが提供されています。これを利用することで、Denoのバンドラに`esbuild`を使用し、さらにDeno特有のモジュール解決をサポートするツールである[`esbuild_deno_loader`](https://deno.land/x/esbuild_deno_loader@0.9.0)を組み合わせることで、Deno環境でもカスタムプラグインを作成することが可能です。
 
 ## テスト
 
